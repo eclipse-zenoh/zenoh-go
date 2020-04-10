@@ -17,7 +17,8 @@ jobs:
       run: |
         git clone https://github.com/eclipse-zenoh/zenoh-c.git
         cd zenoh-c
-        make all install
+        make all
+        sudo make install
 
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
