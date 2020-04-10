@@ -62,12 +62,14 @@ type Path struct {
 // Otherwise, it returns an error.
 func NewPath(p string) (*Path, error) {
 	if len(p) == 0 {
-		return nil, &ZError{"Invalid path (empty String)", 0, nil}
+		return nil, &ZError{Msg: "Invalid path (empty String)", Code: 0, Cause: nil}
 	}
 
 	for i, c := range p {
 		if c == '?' || c == '#' || c == '[' || c == ']' || c == '*' {
-			return nil, &ZError{"Invalid path: " + p + " (forbidden character at index " + strconv.Itoa(i) + ")", 0, nil}
+			return nil, &ZError{
+				Msg:  "Invalid path: " + p + " (forbidden character at index " + strconv.Itoa(i) + ")",
+				Code: 0, Cause: nil}
 		}
 	}
 	result := removeUselessSlashes(p)
@@ -159,11 +161,11 @@ var pattern = regexp.MustCompile(
 // Otherwise, it returns an error.
 func NewSelector(s string) (*Selector, error) {
 	if len(s) == 0 {
-		return nil, &ZError{"Invalid selector (empty String)", 0, nil}
+		return nil, &ZError{Msg: "Invalid selector (empty String)", Code: 0, Cause: nil}
 	}
 
 	if !pattern.MatchString(s) {
-		return nil, &ZError{"Invalid selector (not matching regex)", 0, nil}
+		return nil, &ZError{Msg: "Invalid selector (not matching regex)", Code: 0, Cause: nil}
 	}
 
 	groups := pattern.FindStringSubmatch(s)
@@ -341,7 +343,8 @@ var valueDecoders = map[Encoding]ValueDecoder{}
 // RegisterValueDecoder registers a ValueDecoder function with it's Encoding
 func RegisterValueDecoder(encoding Encoding, decoder ValueDecoder) error {
 	if valueDecoders[encoding] != nil {
-		return &ZError{"Already registered ValueDecoder for Encoding " + strconv.Itoa(int(encoding)), 0, nil}
+		return &ZError{Msg: "Already registered ValueDecoder for Encoding " + strconv.Itoa(int(encoding)),
+			Code: 0, Cause: nil}
 	}
 	valueDecoders[encoding] = decoder
 	return nil
