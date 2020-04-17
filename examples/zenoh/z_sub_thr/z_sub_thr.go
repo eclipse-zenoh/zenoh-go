@@ -53,7 +53,7 @@ func main() {
 		locator = &os.Args[1]
 	}
 
-	s, err := zenoh.NewSelector("/test/thr")
+	s, err := zenoh.NewSelector("/zenoh/examples/throughput/data")
 	if err != nil {
 		panic(err.Error())
 	}

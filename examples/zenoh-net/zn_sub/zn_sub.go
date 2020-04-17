@@ -28,9 +28,9 @@ func listener(rname string, data []byte, info *znet.DataInfo) {
 }
 
 func main() {
-	uri := "/demo/example/**"
+	selector := "/zenoh/examples/**"
 	if len(os.Args) > 1 {
-		uri = os.Args[1]
+		selector = os.Args[1]
 	}
 
 	var locator *string
@@ -45,8 +45,8 @@ func main() {
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Subscriber on '" + uri + "'...")
-	sub, err := s.DeclareSubscriber(uri, znet.NewSubMode(znet.ZNPushMode), listener)
+	fmt.Println("Declaring Subscriber on '" + selector + "'...")
+	sub, err := s.DeclareSubscriber(selector, znet.NewSubMode(znet.ZNPushMode), listener)
 	if err != nil {
 		panic(err.Error())
 	}

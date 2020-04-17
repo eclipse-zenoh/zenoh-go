@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	path := "/demo/example/zenoh-go-eval"
+	path := "/zenoh/examples/go/eval"
 	if len(os.Args) > 1 {
 		path = os.Args[1]
 	}

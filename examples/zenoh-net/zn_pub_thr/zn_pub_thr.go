@@ -49,7 +49,7 @@ func main() {
 	}
 	defer s.Close()
 
-	pub, err := s.DeclarePublisher("/test/thr")
+	pub, err := s.DeclarePublisher("/zenoh/examples/throughput/data")
 	if err != nil {
 		panic(err.Error())
 	}

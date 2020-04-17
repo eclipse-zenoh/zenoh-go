@@ -50,9 +50,9 @@ func queryHandler(rname string, predicate string, repliesSender *znet.RepliesSen
 func main() {
 	stored = make(map[string][]byte)
 
-	uri := "/demo/example/**"
+	selector := "/zenoh/examples/**"
 	if len(os.Args) > 1 {
-		uri = os.Args[1]
+		selector = os.Args[1]
 	}
 
 	var locator *string
@@ -67,8 +67,8 @@ func main() {
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Storage on '" + uri + "'...")
-	sto, err := s.DeclareStorage(uri, listener, queryHandler)
+	fmt.Println("Declaring Storage on '" + selector + "'...")
+	sto, err := s.DeclareStorage(selector, listener, queryHandler)
 	if err != nil {
 		panic(err.Error())
 	}

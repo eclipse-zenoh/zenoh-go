@@ -22,12 +22,12 @@ import (
 )
 
 func main() {
-	uri := "/demo/example/zenoh-go-write"
+	uri := "/zenoh/examples/go/write/hello"
 	if len(os.Args) > 1 {
 		uri = os.Args[1]
 	}
 
-	value := "Write from Go!"
+	value := "Zenitude written from zenoh-net-go!"
 	if len(os.Args) > 2 {
 		value = os.Args[2]
 	}

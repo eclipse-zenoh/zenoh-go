@@ -22,13 +22,13 @@ import (
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
-var uri string
+var path string
 
 func queryHandler(rname string, predicate string, repliesSender *znet.RepliesSender) {
 	fmt.Printf(">> [Query handler] Handling '%s?%s'\n", rname, predicate)
 
 	replies := make([]znet.Resource, 1, 1)
-	replies[0].RName = uri
+	replies[0].RName = path
 	replies[0].Data = []byte("Eval from Go!")
 	replies[0].Encoding = 0
 	replies[0].Kind = 0
@@ -37,9 +37,9 @@ func queryHandler(rname string, predicate string, repliesSender *znet.RepliesSen
 }
 
 func main() {
-	uri = "/demo/example/zenoh-go-eval"
+	path = "/zenoh/examples/go/eval"
 	if len(os.Args) > 1 {
-		uri = os.Args[1]
+		path = os.Args[1]
 	}
 
 	var locator *string
@@ -54,8 +54,8 @@ func main() {
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Eval on '" + uri + "'...")
-	e, err := s.DeclareEval(uri, queryHandler)
+	fmt.Println("Declaring Eval on '" + path + "'...")
+	e, err := s.DeclareEval(path, queryHandler)
 	if err != nil {
 		panic(err.Error())
 	}
