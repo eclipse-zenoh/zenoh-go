@@ -23,12 +23,12 @@ import (
 )
 
 func main() {
-	uri := "/demo/example/zenoh-go-stream"
+	path := "/zenoh/examples/go/stream/hello"
 	if len(os.Args) > 1 {
-		uri = os.Args[1]
+		path = os.Args[1]
 	}
 
-	value := "Stream from Go!"
+	value := "Zenitude streamed from zenoh-net-go!"
 	if len(os.Args) > 2 {
 		value = os.Args[2]
 	}
@@ -45,8 +45,8 @@ func main() {
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Publisher on '" + uri + "'...")
-	pub, err := s.DeclarePublisher(uri)
+	fmt.Println("Declaring Publisher on '" + path + "'...")
+	pub, err := s.DeclarePublisher(path)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -55,7 +55,7 @@ func main() {
 	for idx := 0; idx < 100; idx++ {
 		time.Sleep(1 * time.Second)
 		str := fmt.Sprintf("[%4d] %s", idx, value)
-		fmt.Printf("Streaming Data ('%s': '%s')...\n", uri, str)
+		fmt.Printf("Streaming Data ('%s': '%s')...\n", path, str)
 		pub.StreamData([]byte(str))
 	}
 }

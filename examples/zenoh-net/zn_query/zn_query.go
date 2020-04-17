@@ -45,9 +45,9 @@ func replyHandler(reply *znet.ReplyValue) {
 }
 
 func main() {
-	uri := "/demo/example/**"
+	selector := "/zenoh/examples/**"
 	if len(os.Args) > 1 {
-		uri = os.Args[1]
+		selector = os.Args[1]
 	}
 
 	var locator *string
@@ -62,8 +62,8 @@ func main() {
 	}
 	defer s.Close()
 
-	fmt.Println("Sending Query '" + uri + "'...")
-	err = s.QueryWO(uri, "", replyHandler, znet.NewQueryDest(znet.ZNAll), znet.NewQueryDest(znet.ZNAll))
+	fmt.Println("Sending Query '" + selector + "'...")
+	err = s.QueryWO(selector, "", replyHandler, znet.NewQueryDest(znet.ZNAll), znet.NewQueryDest(znet.ZNAll))
 	if err != nil {
 		panic(err.Error())
 	}

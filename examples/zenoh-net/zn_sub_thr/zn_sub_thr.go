@@ -59,7 +59,7 @@ func main() {
 	}
 	defer s.Close()
 
-	sub, err := s.DeclareSubscriber("/test/thr", znet.NewSubMode(znet.ZNPushMode), listener)
+	sub, err := s.DeclareSubscriber("/zenoh/examples/throughput/data", znet.NewSubMode(znet.ZNPushMode), listener)
 	if err != nil {
 		panic(err.Error())
 	}

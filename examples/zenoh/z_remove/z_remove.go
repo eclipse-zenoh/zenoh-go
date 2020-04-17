@@ -22,8 +22,7 @@ import (
 )
 
 func main() {
-	// If not specified as 1st argument, use a relative path (to the workspace below): "zenoh-go-put"
-	path := "zenoh-go-put"
+	path := "/zenoh/examples/go/put/hello"
 	if len(os.Args) > 1 {
 		path = os.Args[1]
 	}
@@ -44,8 +43,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	fmt.Println("Use Workspace on '/demo/example'")
-	root, _ := zenoh.NewPath("/demo/example")
+	root, _ := zenoh.NewPath("/")
 	w := y.Workspace(root)
 
 	fmt.Println("Remove " + p.ToString())

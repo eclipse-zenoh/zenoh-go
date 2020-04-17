@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	selector := "/demo/example/**"
+	selector := "/zenoh/examples/**"
 	if len(os.Args) > 1 {
 		selector = os.Args[1]
 	}

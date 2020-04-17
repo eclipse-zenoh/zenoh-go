@@ -17,12 +17,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/eclipse-zenoh/zenoh-go"
 )
 
 func main() {
-	selector := "/demo/example/**"
+	selector := "/zenoh/examples/**"
 	if len(os.Args) > 1 {
 		selector = os.Args[1]
 	}
@@ -49,7 +50,8 @@ func main() {
 
 	fmt.Println("Get from " + s.ToString())
 	for _, pv := range w.Get(s) {
-		fmt.Println("  " + pv.Path().ToString() + " : " + pv.Value().ToString())
+		fmt.Println("  " + pv.Path().ToString() + " : " + pv.Value().ToString() +
+			" - encoding_flag=0x" + strconv.FormatInt(int64(pv.Value().Encoding()), 16))
 	}
 
 	err = y.Logout()

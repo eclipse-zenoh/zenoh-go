@@ -38,7 +38,7 @@ func main() {
 		locator = &os.Args[2]
 	}
 
-	path := "/test/thr"
+	path := "/zenoh/examples/throughput/data"
 
 	data := make([]byte, length)
 	for i := 0; i < length; i++ {
