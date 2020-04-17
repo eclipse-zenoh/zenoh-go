@@ -16,37 +16,31 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
 func main() {
-	path := "/zenoh/examples/go/stream/hello"
-	if len(os.Args) > 1 {
-		path = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Path    string `default:"/zenoh/examples/go/stream/hello" arg:"-p" help:"the path representing the URI"`
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
+		Msg     string `default:"Zenitude streamed from zenoh-net-go!" arg:"-m" help:"The quote associated with the welcoming resource"`
 	}
+	arg.MustParse(&args)
 
-	value := "Zenitude streamed from zenoh-net-go!"
-	if len(os.Args) > 2 {
-		value = os.Args[2]
-	}
-
-	var locator *string
-	if len(os.Args) > 3 {
-		locator = &os.Args[3]
-	}
-
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	fmt.Println("Opening session...")
-	s, err := znet.Open(locator, nil)
+	s, err := znet.Open(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Publisher on '" + path + "'...")
-	pub, err := s.DeclarePublisher(path)
+	fmt.Println("Declaring Publisher on '" + args.Path + "'...")
+	pub, err := s.DeclarePublisher(args.Path)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -54,8 +48,8 @@ func main() {
 
 	for idx := 0; idx < 100; idx++ {
 		time.Sleep(1 * time.Second)
-		str := fmt.Sprintf("[%4d] %s", idx, value)
-		fmt.Printf("Streaming Data ('%s': '%s')...\n", path, str)
+		str := fmt.Sprintf("[%4d] %s", idx, args.Msg)
+		fmt.Printf("Streaming Data ('%s': '%s')...\n", args.Path, str)
 		pub.StreamData([]byte(str))
 	}
 }

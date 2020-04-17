@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
@@ -37,25 +38,24 @@ func queryHandler(rname string, predicate string, repliesSender *znet.RepliesSen
 }
 
 func main() {
-	path = "/zenoh/examples/go/eval"
-	if len(os.Args) > 1 {
-		path = os.Args[1]
-	}
 
-	var locator *string
-	if len(os.Args) > 2 {
-		locator = &os.Args[2]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Path    string `default:"/zenoh/examples/go/eval" arg:"-p" help:"the path representing the URI"`
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	fmt.Println("Opening session...")
-	s, err := znet.Open(locator, nil)
+	s, err := znet.Open(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Eval on '" + path + "'...")
-	e, err := s.DeclareEval(path, queryHandler)
+	fmt.Println("Declaring Eval on '" + args.Path + "'...")
+	e, err := s.DeclareEval(args.Path, queryHandler)
 	if err != nil {
 		panic(err.Error())
 	}

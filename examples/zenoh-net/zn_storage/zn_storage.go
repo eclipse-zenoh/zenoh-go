@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
@@ -48,27 +49,25 @@ func queryHandler(rname string, predicate string, repliesSender *znet.RepliesSen
 }
 
 func main() {
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Selector string `default:"/zenoh/examples/**" arg:"-s" help:"the selector associated with this storage"`
+		Locator  string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
+	}
+	arg.MustParse(&args)
+
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	stored = make(map[string][]byte)
 
-	selector := "/zenoh/examples/**"
-	if len(os.Args) > 1 {
-		selector = os.Args[1]
-	}
-
-	var locator *string
-	if len(os.Args) > 2 {
-		locator = &os.Args[2]
-	}
-
 	fmt.Println("Opening session...")
-	s, err := znet.Open(locator, nil)
+	s, err := znet.Open(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Storage on '" + selector + "'...")
-	sto, err := s.DeclareStorage(selector, listener, queryHandler)
+	fmt.Println("Declaring Storage on '" + args.Selector + "'...")
+	sto, err := s.DeclareStorage(args.Selector, listener, queryHandler)
 	if err != nil {
 		panic(err.Error())
 	}

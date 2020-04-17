@@ -16,35 +16,29 @@ package main
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/alexflint/go-arg"
 	"github.com/eclipse-zenoh/zenoh-go"
 )
 
 func main() {
-	path := "/zenoh/examples/go/put/hello"
-	if len(os.Args) > 1 {
-		path = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Path    string `default:"/zenoh/examples/go/put/hello" arg:"-p" help:"the path representing the URI"`
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
+		Msg     string `default:"Zenitude put from zenoh-go!" arg:"-m" help:"The quote associated with the welcoming resource"`
 	}
+	arg.MustParse(&args)
 
-	value := "Zenitude put from zenoh-go!"
-	if len(os.Args) > 2 {
-		value = os.Args[2]
-	}
-
-	var locator *string
-	if len(os.Args) > 3 {
-		locator = &os.Args[3]
-	}
-
-	p, err := zenoh.NewPath(path)
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
+	p, err := zenoh.NewPath(args.Path)
 	if err != nil {
 		panic(err.Error())
 	}
-	v := zenoh.NewStringValue(value)
+	v := zenoh.NewStringValue(args.Msg)
 
 	fmt.Println("Login to Zenoh...")
-	y, err := zenoh.Login(locator, nil)
+	y, err := zenoh.Login(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}

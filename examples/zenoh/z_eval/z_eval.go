@@ -18,27 +18,26 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alexflint/go-arg"
 	"github.com/eclipse-zenoh/zenoh-go"
 )
 
 func main() {
-	path := "/zenoh/examples/go/eval"
-	if len(os.Args) > 1 {
-		path = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Path    string `default:"/zenoh/examples/go/eval" arg:"-p" help:"the path representing the URI"`
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
-	var locator *string
-	if len(os.Args) > 2 {
-		locator = &os.Args[2]
-	}
-
-	p, err := zenoh.NewPath(path)
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
+	p, err := zenoh.NewPath(args.Path)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	fmt.Println("Login to Zenoh...")
-	y, err := zenoh.Login(locator, nil)
+	y, err := zenoh.Login(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}

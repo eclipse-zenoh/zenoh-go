@@ -16,34 +16,28 @@ package main
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
 func main() {
-	uri := "/zenoh/examples/go/write/hello"
-	if len(os.Args) > 1 {
-		uri = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Path    string `default:"/zenoh/examples/go/write/hello" arg:"-p" help:"the path representing the URI"`
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
+		Msg     string `default:"Zenitude written from zenoh-net-go!" arg:"-m" help:"The quote associated with the welcoming resource"`
 	}
+	arg.MustParse(&args)
 
-	value := "Zenitude written from zenoh-net-go!"
-	if len(os.Args) > 2 {
-		value = os.Args[2]
-	}
-
-	var locator *string
-	if len(os.Args) > 3 {
-		locator = &os.Args[3]
-	}
-
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	fmt.Println("Opening session...")
-	s, err := znet.Open(locator, nil)
+	s, err := znet.Open(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer s.Close()
 
-	fmt.Printf("Writing Data ('%s': '%s')...\n", uri, value)
-	s.WriteData(uri, []byte(value))
+	fmt.Printf("Writing Data ('%s': '%s')...\n", args.Path, args.Msg)
+	s.WriteData(args.Path, []byte(args.Msg))
 }

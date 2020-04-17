@@ -16,9 +16,9 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
@@ -48,18 +48,21 @@ func listener(rname string, data []byte, info *znet.DataInfo) {
 }
 
 func main() {
-	var locator *string
-	if len(os.Args) > 1 {
-		locator = &os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Path    string `default:"/zenoh/examples/throughput/data" arg:"-p" help:"The subscriber path"`
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
-	s, err := znet.Open(locator, nil)
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
+	s, err := znet.Open(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer s.Close()
 
-	sub, err := s.DeclareSubscriber("/zenoh/examples/throughput/data", znet.NewSubMode(znet.ZNPushMode), listener)
+	sub, err := s.DeclareSubscriber(args.Path, znet.NewSubMode(znet.ZNPushMode), listener)
 	if err != nil {
 		panic(err.Error())
 	}

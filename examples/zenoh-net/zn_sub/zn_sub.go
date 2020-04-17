@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
@@ -28,25 +29,23 @@ func listener(rname string, data []byte, info *znet.DataInfo) {
 }
 
 func main() {
-	selector := "/zenoh/examples/**"
-	if len(os.Args) > 1 {
-		selector = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Selector string `default:"/zenoh/examples/**" arg:"-s" help:"The selector specifying the subscription"`
+		Locator  string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
-	var locator *string
-	if len(os.Args) > 2 {
-		locator = &os.Args[2]
-	}
-
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	fmt.Println("Opening session...")
-	s, err := znet.Open(locator, nil)
+	s, err := znet.Open(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer s.Close()
 
-	fmt.Println("Declaring Subscriber on '" + selector + "'...")
-	sub, err := s.DeclareSubscriber(selector, znet.NewSubMode(znet.ZNPushMode), listener)
+	fmt.Println("Declaring Subscriber on '" + args.Selector + "'...")
+	sub, err := s.DeclareSubscriber(args.Selector, znet.NewSubMode(znet.ZNPushMode), listener)
 	if err != nil {
 		panic(err.Error())
 	}

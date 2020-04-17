@@ -17,22 +17,24 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"os"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
 func main() {
-	var locator *string
-	if len(os.Args) > 1 {
-		locator = &os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	fmt.Println("Opening session...")
 	properties := map[int][]byte{
 		znet.UserKey:   []byte("user"),
 		znet.PasswdKey: []byte("password")}
-	s, err := znet.Open(locator, properties)
+	s, err := znet.Open(&args.Locator, properties)
 	if err != nil {
 		panic(err.Error())
 	}
