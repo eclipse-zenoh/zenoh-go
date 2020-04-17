@@ -336,6 +336,12 @@ const (
 
 	// JSON The value is a JSON structure in an UTF-8 string.
 	JSON Encoding = 0x04
+
+	// INT The value is an integer as an UTF-8 string.
+	INT Encoding = 0x06
+
+	// FLOAT The value is a float as an UTF-8 string.
+	FLOAT Encoding = 0x07
 )
 
 var valueDecoders = map[Encoding]ValueDecoder{}
@@ -355,6 +361,8 @@ func init() {
 	RegisterValueDecoder(STRING, stringDecoder)
 	RegisterValueDecoder(PROPERTIES, propertiesDecoder)
 	RegisterValueDecoder(JSON, stringDecoder)
+	RegisterValueDecoder(INT, intDecoder)
+	RegisterValueDecoder(FLOAT, floatDecoder)
 }
 
 ////////////////
@@ -435,6 +443,10 @@ func (v *StringValue) ToString() string {
 	return v.s
 }
 
+func stringEncoder(s string) []byte {
+	return []byte(s)
+}
+
 func stringDecoder(buf []byte) (Value, error) {
 	return &StringValue{string(buf)}, nil
 }
@@ -501,4 +513,86 @@ func propertiesOfString(s string) Properties {
 
 func propertiesDecoder(buf []byte) (Value, error) {
 	return &PropertiesValue{propertiesOfString(string(buf))}, nil
+}
+
+//////////////////////
+//    INT Value     //
+//////////////////////
+
+// IntValue is a INT value (i.e. an int64)
+type IntValue struct {
+	i int64
+}
+
+// NewIntValue returns a new IntValue
+func NewIntValue(i int64) *IntValue {
+	return &IntValue{i}
+}
+
+// Encoding returns the encoding flag for an IntValue
+func (v *IntValue) Encoding() Encoding {
+	return INT
+}
+
+// Encode returns the value encoded as a []byte
+func (v *IntValue) Encode() []byte {
+	return intEncoder(v.i)
+}
+
+// ToString returns the value as a string
+func (v *IntValue) ToString() string {
+	return strconv.FormatInt(v.i, 10)
+}
+
+func intEncoder(i int64) []byte {
+	return []byte(strconv.FormatInt(i, 10))
+}
+
+func intDecoder(buf []byte) (Value, error) {
+	i, err := strconv.ParseInt(string(buf), 10, 64)
+	if err != nil {
+		return nil, &ZError{Msg: "Failed to decode INT value", Code: 0, Cause: err}
+	}
+	return &IntValue{i}, nil
+}
+
+//////////////////////
+//    FLOAT Value     //
+//////////////////////
+
+// FloatValue is a FLOAT value (i.e. a float64)
+type FloatValue struct {
+	f float64
+}
+
+// NewFloatValue returns a new FloatValue
+func NewFloatValue(f float64) *FloatValue {
+	return &FloatValue{f}
+}
+
+// Encoding returns the encoding flag for an FloatValue
+func (v *FloatValue) Encoding() Encoding {
+	return FLOAT
+}
+
+// Encode returns the value encoded as a []byte
+func (v *FloatValue) Encode() []byte {
+	return []byte(v.ToString())
+}
+
+// ToString returns the value as a string
+func (v *FloatValue) ToString() string {
+	return strconv.FormatFloat(v.f, 'g', -1, 64)
+}
+
+func floatEncoder(f float64) []byte {
+	return []byte(strconv.FormatFloat(f, 'g', -1, 64))
+}
+
+func floatDecoder(buf []byte) (Value, error) {
+	f, err := strconv.ParseFloat(string(buf), 64)
+	if err != nil {
+		return nil, &ZError{Msg: "Failed to decode FLOAT value", Code: 0, Cause: err}
+	}
+	return &FloatValue{f}, nil
 }

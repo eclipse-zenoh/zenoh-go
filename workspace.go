@@ -45,6 +45,58 @@ func (w *Workspace) Put(path *Path, value Value) error {
 	return nil
 }
 
+// PutBytes a path/[]bytes into Zenoh.
+func (w *Workspace) PutBytes(path *Path, value []byte) error {
+	logger.WithFields(log.Fields{
+		"path":  path,
+		"value": value,
+	}).Debug("PutBytes")
+	p := w.toAbsolutePath(path)
+	if e := w.session.WriteDataWO(p.ToString(), value, RAW, PUT); e != nil {
+		return &ZError{Msg: "PutBytes on " + p.ToString() + " failed", Code: 0, Cause: e}
+	}
+	return nil
+}
+
+// PutString a path/string into Zenoh.
+func (w *Workspace) PutString(path *Path, value string) error {
+	logger.WithFields(log.Fields{
+		"path":  path,
+		"value": value,
+	}).Debug("PutString")
+	p := w.toAbsolutePath(path)
+	if e := w.session.WriteDataWO(p.ToString(), stringEncoder(value), STRING, PUT); e != nil {
+		return &ZError{Msg: "PutString on " + p.ToString() + " failed", Code: 0, Cause: e}
+	}
+	return nil
+}
+
+// PutInt a path/int64 into Zenoh.
+func (w *Workspace) PutInt(path *Path, value int64) error {
+	logger.WithFields(log.Fields{
+		"path":  path,
+		"value": value,
+	}).Debug("PutInt")
+	p := w.toAbsolutePath(path)
+	if e := w.session.WriteDataWO(p.ToString(), intEncoder(value), INT, PUT); e != nil {
+		return &ZError{Msg: "PutInt on " + p.ToString() + " failed", Code: 0, Cause: e}
+	}
+	return nil
+}
+
+// PutFloat a path/float64 into Zenoh.
+func (w *Workspace) PutFloat(path *Path, value float64) error {
+	logger.WithFields(log.Fields{
+		"path":  path,
+		"value": value,
+	}).Debug("PutFloat")
+	p := w.toAbsolutePath(path)
+	if e := w.session.WriteDataWO(p.ToString(), floatEncoder(value), FLOAT, PUT); e != nil {
+		return &ZError{Msg: "PutFloat on " + p.ToString() + " failed", Code: 0, Cause: e}
+	}
+	return nil
+}
+
 // Update a path/value into Zenoh.
 func (w *Workspace) Update(path *Path, value Value) error {
 	logger.WithFields(log.Fields{
