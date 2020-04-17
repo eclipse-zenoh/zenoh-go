@@ -16,43 +16,34 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
+	"github.com/alexflint/go-arg"
 	"github.com/eclipse-zenoh/zenoh-go"
 )
 
 func main() {
-	var locator *string
-	if len(os.Args) < 2 {
-		fmt.Printf("USAGE:\n\ty_put_thr <payload-size> [<zenoh-locator>]\n\n")
-		os.Exit(-1)
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Size    int    `default:"256" arg:"-s"help:"the size in bytes of the payload used for the throughput test"`
+		Locator string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
+		Path    string `default:"/zenoh/examples/throughput/data" arg:"-p" help:"the resource used to write throughput data"`
 	}
+	arg.MustParse(&args)
 
-	length, err := strconv.Atoi(os.Args[1])
-	if err != nil {
-		panic(err.Error())
-	}
-	fmt.Printf("Running throughput test for payload of %d bytes\n", length)
-	if len(os.Args) > 2 {
-		locator = &os.Args[2]
-	}
-
-	path := "/zenoh/examples/throughput/data"
-
-	data := make([]byte, length)
-	for i := 0; i < length; i++ {
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
+	data := make([]byte, args.Size)
+	for i := 0; i < args.Size; i++ {
 		data[i] = byte(i % 10)
 	}
 
-	p, err := zenoh.NewPath(path)
+	p, err := zenoh.NewPath(args.Path)
 	if err != nil {
 		panic(err.Error())
 	}
 	v := zenoh.NewRawValue(data)
 
 	fmt.Println("Login to Zenoh...")
-	y, err := zenoh.Login(locator, nil)
+	y, err := zenoh.Login(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}

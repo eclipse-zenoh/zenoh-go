@@ -11,6 +11,8 @@
    go run <example/example.go>
    ```
 
+   Each example accepts the -h or --help option that provides a description of its arguments and their default values.
+
 ## Examples description
 
 ### z_add_storage
@@ -19,15 +21,8 @@
 
    Usage:
    ```bash
-   go run z_add_storage/z_add_storage.go [selector] [storage-id] [locator]
+   go run z_add_storage/z_add_storage.go [--selector SELECTOR] [--id ID] [--locator LOCATOR]
    ```
-   where the optional arguments are:
-   - **selector** :  the selector matching the keys (path) that have to be stored.  
-                     Default value: `/demo/example/**`
-   - **storage-id** : the storage identifier.  
-                      Default value: `Demo` 
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.
 
    Note that his example doesn't specify the Backend that Zenoh has to use for storage creation.  
    Therefore, Zenoh will automatically select the memory backend, meaning the storage will be in memory
@@ -43,15 +38,8 @@
 
    Usage:
    ```bash
-   go run z_put/z_put.go [path] [value] [locator]
+   go run z_put/z_put.go [--path PATH] [--locator LOCATOR] [--msg MSG]
    ```
-   where the optional arguments are:
-   - **path** : the path used as a key for the value.  
-                Default value: `/demo/example/zenoh-go-put` 
-   - **value** : the value (as a string).  
-                Default value: `"Put from Zenoh Go!"` 
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.
 
 ### z_get
 
@@ -62,13 +50,8 @@
 
    Usage:
    ```bash
-   go run z_get/z_get.go [selector] [locator]
+   go run z_get/z_get.go [--selector SELECTOR] [--locator LOCATOR]
    ```
-   where the optional arguments are:
-   - **selector** : the selector that all replies shall match.  
-                    Default value: `/demo/example/**` 
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.
 
 ### z_remove
 
@@ -78,13 +61,8 @@
 
    Usage:
    ```bash
-   go run z_remove/z_remove.go [path] [locator]
+   go run z_remove/z_remove.go [--path PATH] [--locator LOCATOR]
    ```
-   where the optional arguments are:
-   - **path** : the key to be removed.  
-                Default value: `/demo/example/zenoh-go-put` 
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.
 
 ### z_sub
 
@@ -94,13 +72,8 @@
 
    Usage:
    ```bash
-   go run z_sub/z_sub.go [selector] [locator]
+   go run z_sub/z_sub.go [--selector SELECTOR] [--locator LOCATOR]
    ```
-   where the optional arguments are:
-   - **selector** : the subscription selector.  
-                    Default value: `/demo/example/**` 
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.
 
 ### z_eval
 
@@ -111,13 +84,8 @@
 
    Usage:
    ```bash
-   go run z_eval/z_eval.go [selector] [locator]
+   go run z_eval/z_eval.go [--path PATH] [--locator LOCATOR]
    ```
-   where the optional arguments are:
-   - **path** : the eval path.  
-                Default value: `/demo/example/zenoh-go-eval` 
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.
 
 ### z_put_thr & z_sub_thr
 
@@ -128,17 +96,10 @@
 
    Publisher usage:
    ```bash
-   go run z_put_thr/z_put_thr.go <payload-size> [locator]
+   go run z_put_thr/z_put_thr.go [--size SIZE] [--locator LOCATOR] [--path PATH]
    ```
-   where the arguments are:
-   - **payload-size** : the size of the payload in bytes.  
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.
 
    Subscriber usage:
    ```bash
-   go run z_sub_thr/z_sub_thr.go [locator]
+   go run z_sub_thr/z_sub_thr.go [--path PATH] [--locator LOCATOR]
    ```
-   where the optional arguments are:
-   - **locator** : the locator of the Zenoh router to connect.  
-                   Default value: none, meaning the Zenoh router is found via multicast.

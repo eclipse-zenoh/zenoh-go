@@ -16,39 +16,33 @@ package main
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/alexflint/go-arg"
 	"github.com/eclipse-zenoh/zenoh-go"
 )
 
 func main() {
-	selector := "/zenoh/examples/**"
-	if len(os.Args) > 1 {
-		selector = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Selector string `default:"/zenoh/examples/**" arg:"-s" help:"the selector associated with this storage"`
+		ID       string `default:"zenoh-examples-storage" arg:"-i" help:"the storage identifier"`
+		Locator  string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
-	storageID := "Demo"
-	if len(os.Args) > 2 {
-		storageID = os.Args[2]
-	}
-
-	var locator *string
-	if len(os.Args) > 3 {
-		locator = &os.Args[3]
-	}
-
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	fmt.Println("Login to Zenoh...")
-	y, err := zenoh.Login(locator, nil)
+	y, err := zenoh.Login(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	admin := y.Admin()
 
-	fmt.Println("Add storage " + storageID + " with selector " + selector)
+	fmt.Println("Add storage " + args.ID + " with selector " + args.Selector)
 	p := make(map[string]string)
-	p["selector"] = selector
-	admin.AddStorage(storageID, p)
+	p["selector"] = args.Selector
+	admin.AddStorage(args.ID, p)
 
 	err = y.Logout()
 	if err != nil {

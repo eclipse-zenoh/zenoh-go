@@ -16,9 +16,9 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/alexflint/go-arg"
 	znet "github.com/eclipse-zenoh/zenoh-go/net"
 )
 
@@ -45,25 +45,23 @@ func replyHandler(reply *znet.ReplyValue) {
 }
 
 func main() {
-	selector := "/zenoh/examples/**"
-	if len(os.Args) > 1 {
-		selector = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Selector string `default:"/zenoh/examples/**" arg:"-s" help:"The selector to be used for issuing the query"`
+		Locator  string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
-	var locator *string
-	if len(os.Args) > 2 {
-		locator = &os.Args[2]
-	}
-
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
 	fmt.Println("Opening session...")
-	s, err := znet.Open(locator, nil)
+	s, err := znet.Open(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer s.Close()
 
-	fmt.Println("Sending Query '" + selector + "'...")
-	err = s.QueryWO(selector, "", replyHandler, znet.NewQueryDest(znet.ZNAll), znet.NewQueryDest(znet.ZNAll))
+	fmt.Println("Sending Query '" + args.Selector + "'...")
+	err = s.QueryWO(args.Selector, "", replyHandler, znet.NewQueryDest(znet.ZNAll), znet.NewQueryDest(znet.ZNAll))
 	if err != nil {
 		panic(err.Error())
 	}

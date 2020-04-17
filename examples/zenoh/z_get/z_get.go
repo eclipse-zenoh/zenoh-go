@@ -16,30 +16,28 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
+	"github.com/alexflint/go-arg"
 	"github.com/eclipse-zenoh/zenoh-go"
 )
 
 func main() {
-	selector := "/zenoh/examples/**"
-	if len(os.Args) > 1 {
-		selector = os.Args[1]
+	// --- Command line argument parsing --- --- --- --- --- ---
+	var args struct {
+		Selector string `default:"/zenoh/examples/**" arg:"-s" help:"The selector to be used for issuing the query"`
+		Locator  string `arg:"-l" help:"The locator to be used to boostrap the zenoh session. By default dynamic discovery is used"`
 	}
+	arg.MustParse(&args)
 
-	var locator *string
-	if len(os.Args) > 2 {
-		locator = &os.Args[2]
-	}
-
-	s, err := zenoh.NewSelector(selector)
+	// zenoh-net code  --- --- --- --- --- --- --- --- --- --- ---
+	s, err := zenoh.NewSelector(args.Selector)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	fmt.Println("Login to Zenoh...")
-	y, err := zenoh.Login(locator, nil)
+	y, err := zenoh.Login(&args.Locator, nil)
 	if err != nil {
 		panic(err.Error())
 	}
