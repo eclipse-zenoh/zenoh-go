@@ -41,6 +41,19 @@
    go run z_put/z_put.go [--path PATH] [--locator LOCATOR] [--msg MSG]
    ```
 
+### z_put_float
+
+   Put a key/value into Zenoh where the value is a float.
+   The key/value will be stored by all the storages with a selector that matches the key.
+   It will also be received by all the matching subscribers (see [z_sub](#z_sub) below).
+   Note that if no storage and no subscriber are matching the key, the key/value will be dropped.
+   Therefore, you probably should run [z_add_storage](#z_add_storage) and/or [z_sub](#z_sub) before z_put_float.
+
+   Usage:
+   ```bash
+   go run z_put_float/z_put_float.go [--path PATH] [--locator LOCATOR]
+   ```
+
 ### z_get
 
    Get a list of keys/values from Zenoh.  
@@ -94,12 +107,12 @@
    put operations and a subscriber receiving notifications of those put.
    Note that you can run this example with or without any storage.
 
-   Publisher usage:
-   ```bash
-   go run z_put_thr/z_put_thr.go [--size SIZE] [--locator LOCATOR] [--path PATH]
-   ```
-
    Subscriber usage:
    ```bash
    go run z_sub_thr/z_sub_thr.go [--path PATH] [--locator LOCATOR]
+   ```
+
+   Publisher usage:
+   ```bash
+   go run z_put_thr/z_put_thr.go [--size SIZE] [--locator LOCATOR] [--path PATH]
    ```
