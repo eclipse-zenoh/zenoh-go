@@ -68,7 +68,7 @@ func Open(locator *string, properties map[int][]byte) (*Session, error) {
 
 	var l *C.char
 	if locator != nil {
-		l := C.CString(*locator)
+		l = C.CString(*locator)
 		defer C.free(unsafe.Pointer(l))
 	}
 
