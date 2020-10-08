@@ -12,7 +12,7 @@
 [Eclipse zenoh](http://zenoh.io) is an extremely efficient and fault-tolerant [Named Data Networking](http://named-data.net) (NDN) protocol 
 that is able to scale down to extremely constrainded devices and networks. 
 
-:warning: zenoh has been subjet to a complete rewrite with major protocol updates between versions 0.4.2 and 0.5.0. The Go API does not yet integrate those changes and is only compatible with version 0.4.2 of the zenoh daemon and the underlying zenoh-c stack.
+:warning: **zenoh has been subjet to a complete rewrite with major protocol updates between versions 0.4.2 and 0.5.0. The Go API does not yet integrate those changes and is only compatible with version 0.4.2 of the zenoh daemon and the underlying zenoh-c stack.**
 
 The Go API is for pure clients, in other terms does not support peer-to-peer communication, can be easily tested against a zenoh router running in a Docker container (see https://github.com/eclipse-zenoh/zenoh#how-to-test-it). 
 
