@@ -16,11 +16,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/eclipse-zenoh/zenoh-go/examples/utils"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"github.com/eclipse-zenoh/zenoh-go/examples/utils"
 
 	"github.com/eclipse-zenoh/zenoh-go/zenoh"
 )
