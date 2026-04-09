@@ -12,7 +12,8 @@ runs:
       id: clone-zenoh-c
       shell: bash
       run: |
-          git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git
+          git submodule init
+          git submodule update
           cd zenoh-c
           echo "rev=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
