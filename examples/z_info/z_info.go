@@ -17,7 +17,9 @@ package main
 import (
 	"fmt"
 	"os"
-
+	"os/signal"
+	"strings"
+	"syscall"
 	"github.com/eclipse-zenoh/zenoh-go/examples/utils"
 
 	"github.com/eclipse-zenoh/zenoh-go/zenoh"
@@ -48,6 +50,58 @@ func main() {
 	for _, id := range ids {
 		fmt.Printf("%s\n", id)
 	}
+
+	// Warning: transport/link APIs are unstable.
+
+	fmt.Println("transports:")
+	transports, _ := session.Transports()
+	for _, tr := range transports {
+		fmt.Printf("  zid: %s, whatami: %s, qos: %v, multicast: %v\n",
+			tr.ZId(), tr.WhatAmI(), tr.IsQos(), tr.IsMulticast())
+		tr.Drop()
+	}
+
+	fmt.Println("links:")
+	links, _ := session.Links(nil)
+	for _, l := range links {
+		ifaces := strings.Join(l.Interfaces(), ", ")
+		fmt.Printf("  zid: %s, src: %s, dst: %s, mtu: %d, streamed: %v, interfaces: [%s]\n",
+			l.ZId(), l.Src(), l.Dst(), l.Mtu(), l.IsStreamed(), ifaces)
+		l.Drop()
+	}
+
+	_ = session.DeclareBackgroundTransportEventsListener(
+		zenoh.Closure[zenoh.TransportEvent]{
+			Call: func(evt zenoh.TransportEvent) {
+				action := "Opened"
+				if evt.Kind() == zenoh.SampleKindDelete {
+					action = "Closed"
+				}
+				fmt.Printf("[Transport Event] %s: zid=%s\n", action, evt.ZId())
+			},
+		},
+		nil,
+	)
+
+	_ = session.DeclareBackgroundLinkEventsListener(
+		zenoh.Closure[zenoh.LinkEvent]{
+			Call: func(evt zenoh.LinkEvent) {
+				action := "Added"
+				if evt.Kind() == zenoh.SampleKindDelete {
+					action = "Removed"
+				}
+				fmt.Printf("[Link Event] %s: zid=%s, src=%s, dst=%s\n",
+					action, evt.ZId(), evt.Src(), evt.Dst())
+			},
+		},
+		nil,
+	)
+
+	fmt.Println("Monitoring connectivity events. Press CTRL-C to quit...")
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	<-sig
+	fmt.Println("Exiting...")
 }
 
 type Args struct {
