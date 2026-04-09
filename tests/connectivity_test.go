@@ -486,3 +486,106 @@ func TestBackgroundLinkEventsListener(t *testing.T) {
 	assert.Equal(t, 2, len(events))
 	assert.Equal(t, zenoh.SampleKindDelete, events[1].Kind())
 }
+
+func TestBackgroundTransportEventsListenerWithHistory(t *testing.T) {
+	s1, s2 := openConnectedPair(t, 17967)
+	defer s1.Drop()
+	defer s2.Drop()
+
+	s2ZId := s2.ZId()
+	var events []zenoh.TransportEvent
+
+	// Declare listener with history — should receive event for already-existing transport
+	err := s1.DeclareBackgroundTransportEventsListener(
+		zenoh.Closure[zenoh.TransportEvent]{
+			Call: func(evt zenoh.TransportEvent) { events = append(events, evt) },
+		},
+		&zenoh.TransportEventsListenerOptions{History: true},
+	)
+	require.NoError(t, err)
+
+	time.Sleep(200 * time.Millisecond)
+
+	assert.Equal(t, 1, len(events))
+	assert.Equal(t, zenoh.SampleKindPut, events[0].Kind())
+	assert.Equal(t, s2ZId.String(), events[0].ZId().String())
+}
+
+func TestBackgroundLinkEventsListenerWithHistoryAndFilter(t *testing.T) {
+	s1, s2 := openConnectedPair(t, 17968)
+	defer s1.Drop()
+	defer s2.Drop()
+
+	s2ZId := s2.ZId()
+
+	transports, err := s1.Transports()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(transports))
+
+	var events []zenoh.LinkEvent
+
+	// Declare listener with history and transport filter
+	err = s1.DeclareBackgroundLinkEventsListener(
+		zenoh.Closure[zenoh.LinkEvent]{
+			Call: func(evt zenoh.LinkEvent) { events = append(events, evt) },
+		},
+		&zenoh.LinkEventsListenerOptions{
+			History:   true,
+			Transport: option.Some(transports[0]),
+		},
+	)
+	require.NoError(t, err)
+
+	time.Sleep(200 * time.Millisecond)
+
+	assert.Equal(t, 1, len(events))
+	assert.Equal(t, zenoh.SampleKindPut, events[0].Kind())
+	assert.Equal(t, s2ZId.String(), events[0].ZId().String())
+}
+
+func TestLinkEventsListenerTransportFilterForwardEvents(t *testing.T) {
+	s1 := openListenerSession(t, 17969)
+	defer s1.Drop()
+
+	// Declare listener with a dummy/zero Transport filter (no matching transport)
+	listener, err := s1.DeclareLinkEventsListener(
+		zenoh.NewFifoChannel[zenoh.LinkEvent](16),
+		&zenoh.LinkEventsListenerOptions{
+			Transport: option.Some(zenoh.Transport{}),
+		},
+	)
+	require.NoError(t, err)
+	defer listener.Drop()
+
+	// Use a background listener to collect events
+	var backgroundEvents []zenoh.LinkEvent
+	err = s1.DeclareBackgroundLinkEventsListener(
+		zenoh.Closure[zenoh.LinkEvent]{
+			Call: func(evt zenoh.LinkEvent) { backgroundEvents = append(backgroundEvents, evt) },
+		},
+		&zenoh.LinkEventsListenerOptions{
+			Transport: option.Some(zenoh.Transport{}),
+		},
+	)
+	require.NoError(t, err)
+
+	// Connect a peer — should not produce events due to filter mismatch
+	s2 := openConnectorSession(t, 17969)
+	defer s2.Drop()
+	time.Sleep(500 * time.Millisecond)
+
+	assert.Equal(t, 0, len(backgroundEvents))
+}
+
+func TestEmptyTransportsAndLinksLists(t *testing.T) {
+	s := openListenerSession(t, 17971)
+	defer s.Drop()
+
+	transports, err := s.Transports()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(transports))
+
+	links, err := s.Links(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(links))
+}
