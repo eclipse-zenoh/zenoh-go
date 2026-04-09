@@ -151,7 +151,7 @@ func TestTransportEventsListener(t *testing.T) {
 	evt := <-listener.Handler()
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
 	s2ZId := s2.ZId()
-	assert.Equal(t, s2ZId.String(), evt.ZId().String())
+	assert.Equal(t, s2ZId.String(), evt.Transport().ZId().String())
 
 	// Disconnect — should produce a DELETE event.
 	s2.Drop()
@@ -182,7 +182,7 @@ func TestTransportEventsListenerWithHistory(t *testing.T) {
 	assert.Equal(t, 1, len(listener.Handler()))
 	evt := <-listener.Handler()
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
-	assert.Equal(t, s2ZId.String(), evt.ZId().String())
+	assert.Equal(t, s2ZId.String(), evt.Transport().ZId().String())
 }
 
 func TestBackgroundTransportEventsListener(t *testing.T) {
@@ -230,7 +230,7 @@ func TestLinkEventsListener(t *testing.T) {
 	evt := <-listener.Handler()
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
 	s2ZId := s2.ZId()
-	assert.Equal(t, s2ZId.String(), evt.ZId().String())
+	assert.Equal(t, s2ZId.String(), evt.Link().ZId().String())
 
 	// Disconnect — should produce a DELETE event.
 	s2.Drop()
@@ -261,7 +261,7 @@ func TestLinkEventsListenerWithHistory(t *testing.T) {
 	assert.Equal(t, 1, len(listener.Handler()))
 	evt := <-listener.Handler()
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
-	assert.Equal(t, s2ZId.String(), evt.ZId().String())
+	assert.Equal(t, s2ZId.String(), evt.Link().ZId().String())
 }
 
 func TestLinkEventsListenerWithTransportFilter(t *testing.T) {
@@ -290,7 +290,7 @@ func TestLinkEventsListenerWithTransportFilter(t *testing.T) {
 	evt := <-listener.Handler()
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
 	s2ZId := s2.ZId()
-	assert.Equal(t, s2ZId.String(), evt.ZId().String())
+	assert.Equal(t, s2ZId.String(), evt.Link().ZId().String())
 }
 
 func TestTransportAccessors(t *testing.T) {
@@ -335,12 +335,12 @@ func TestTransportEventAccessors(t *testing.T) {
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
 
 	// Verify transport properties in the snapshot
-	assert.Equal(t, zenoh.WhatAmIPeer, evt.WhatAmI())
-	assert.False(t, evt.IsMulticast())
+	assert.Equal(t, zenoh.WhatAmIPeer, evt.Transport().WhatAmI())
+	assert.False(t, evt.Transport().IsMulticast())
 
 	// Just verify IsShm and IsQos don't panic and return bool values
-	_ = evt.IsShm()
-	_ = evt.IsQos()
+	_ = evt.Transport().IsShm()
+	_ = evt.Transport().IsQos()
 
 	s2.Drop()
 }
@@ -399,18 +399,18 @@ func TestLinkEventSnapshotFields(t *testing.T) {
 	require.Equal(t, 1, len(links))
 
 	// Verify event snapshot fields match synchronous link fields
-	assert.Equal(t, evt.ZId().String(), links[0].ZId().String())
-	assert.Equal(t, evt.Src(), links[0].Src())
-	assert.NotEmpty(t, evt.Src())
-	assert.Equal(t, evt.Dst(), links[0].Dst())
-	assert.NotEmpty(t, evt.Dst())
-	assert.Equal(t, evt.Mtu(), links[0].Mtu())
-	assert.Greater(t, evt.Mtu(), uint16(0))
-	assert.Equal(t, evt.IsStreamed(), links[0].IsStreamed())
-	assert.True(t, evt.IsStreamed()) // TCP is streamed
-	assert.Equal(t, evt.Interfaces(), links[0].Interfaces())
-	assert.Equal(t, evt.Group(), links[0].Group())
-	assert.Empty(t, evt.Group()) // Unicast link has no group
+	assert.Equal(t, evt.Link().ZId().String(), links[0].ZId().String())
+	assert.Equal(t, evt.Link().Src(), links[0].Src())
+	assert.NotEmpty(t, evt.Link().Src())
+	assert.Equal(t, evt.Link().Dst(), links[0].Dst())
+	assert.NotEmpty(t, evt.Link().Dst())
+	assert.Equal(t, evt.Link().Mtu(), links[0].Mtu())
+	assert.Greater(t, evt.Link().Mtu(), uint16(0))
+	assert.Equal(t, evt.Link().IsStreamed(), links[0].IsStreamed())
+	assert.True(t, evt.Link().IsStreamed()) // TCP is streamed
+	assert.Equal(t, evt.Link().Interfaces(), links[0].Interfaces())
+	assert.Equal(t, evt.Link().Group(), links[0].Group())
+	assert.Empty(t, evt.Link().Group()) // Unicast link has no group
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
 
 	s2.Drop()
@@ -508,7 +508,7 @@ func TestBackgroundTransportEventsListenerWithHistory(t *testing.T) {
 
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, zenoh.SampleKindPut, events[0].Kind())
-	assert.Equal(t, s2ZId.String(), events[0].ZId().String())
+	assert.Equal(t, s2ZId.String(), events[0].Transport().ZId().String())
 }
 
 func TestBackgroundLinkEventsListenerWithHistoryAndFilter(t *testing.T) {
@@ -535,7 +535,7 @@ func TestBackgroundLinkEventsListenerWithHistoryAndFilter(t *testing.T) {
 
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, zenoh.SampleKindPut, events[0].Kind())
-	assert.Equal(t, s2ZId.String(), events[0].ZId().String())
+	assert.Equal(t, s2ZId.String(), events[0].Link().ZId().String())
 }
 
 func TestLinkEventsListenerTransportFilterForwardEvents(t *testing.T) {

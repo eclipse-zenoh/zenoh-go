@@ -170,20 +170,8 @@ func extractLink(loanedLink *C.z_loaned_link_t) Link {
 // This is a pure Go snapshot: all fields are extracted from the C object at event time,
 // so there are no C resources to manage.
 type LinkEvent struct {
-	kind           SampleKind
-	zId            Id
-	src            string
-	dst            string
-	group          string
-	mtu            uint16
-	isStreamed      bool
-	interfaces     []string
-	authIdentifier string
-	priorityMin    uint8
-	priorityMax    uint8
-	hasPriorities  bool
-	reliability    Reliability
-	hasReliability bool
+	kind SampleKind
+	link Link
 }
 
 // Return the kind of the event. [SampleKindPut] means link added, [SampleKindDelete] means removed.
@@ -191,76 +179,16 @@ func (e *LinkEvent) Kind() SampleKind {
 	return e.kind
 }
 
-// Return the Zenoh ID of the transport this link belongs to.
-func (e *LinkEvent) ZId() Id {
-	return e.zId
-}
-
-// Return the source locator (local endpoint) of the link.
-func (e *LinkEvent) Src() string {
-	return e.src
-}
-
-// Return the destination locator (remote endpoint) of the link.
-func (e *LinkEvent) Dst() string {
-	return e.dst
-}
-
-// Return the group locator of the link (for multicast links). Empty string if not applicable.
-func (e *LinkEvent) Group() string {
-	return e.group
-}
-
-// Return the MTU (maximum transmission unit) of the link in bytes.
-func (e *LinkEvent) Mtu() uint16 {
-	return e.mtu
-}
-
-// Return whether the link is streamed.
-func (e *LinkEvent) IsStreamed() bool {
-	return e.isStreamed
-}
-
-// Return the network interfaces associated with the link.
-func (e *LinkEvent) Interfaces() []string {
-	return e.interfaces
-}
-
-// Return the authentication identifier of the link. Empty string if not available.
-func (e *LinkEvent) AuthIdentifier() string {
-	return e.authIdentifier
-}
-
-// Return the priority range supported by the link if QoS is enabled.
-// Returns (min, max, true) if priorities are supported, (0, 0, false) otherwise.
-func (e *LinkEvent) Priorities() (min uint8, max uint8, ok bool) {
-	return e.priorityMin, e.priorityMax, e.hasPriorities
-}
-
-// Return the reliability of the link if QoS is enabled.
-// Returns (reliability, true) if available, (0, false) otherwise.
-func (e *LinkEvent) Reliability() (Reliability, bool) {
-	return e.reliability, e.hasReliability
+// Return the link associated with this event.
+func (e *LinkEvent) Link() Link {
+	return e.link
 }
 
 // extractLinkSnapshot extracts all fields from a loaned link into a pure Go LinkEvent.
 func extractLinkSnapshot(kind SampleKind, loanedLink *C.z_loaned_link_t) LinkEvent {
-	l := extractLink(loanedLink)
 	return LinkEvent{
-		kind:           kind,
-		zId:            l.zId,
-		src:            l.src,
-		dst:            l.dst,
-		group:          l.group,
-		mtu:            l.mtu,
-		isStreamed:     l.isStreamed,
-		interfaces:     l.interfaces,
-		authIdentifier: l.authIdentifier,
-		priorityMin:    l.priorityMin,
-		priorityMax:    l.priorityMax,
-		hasPriorities:  l.hasPriorities,
-		reliability:    l.reliability,
-		hasReliability: l.hasReliability,
+		kind: kind,
+		link: extractLink(loanedLink),
 	}
 }
 
@@ -331,17 +259,19 @@ type InfoLinksOptions struct {
 	Transport option.Option[Transport] // Optional transport filter. If set, only return links of this transport.
 }
 
-// buildCTransport creates a C-owned transport from a Go Transport value using zc_internal_create_transport.
-// The returned transport is owned and must be moved (not dropped) into the C options struct — C takes ownership.
-func buildCTransport(t Transport) C.z_owned_transport_t {
+// buildCTransport creates a C-heap-allocated owned transport from a Go Transport value using
+// zc_internal_create_transport. The returned pointer is C-heap memory; the caller must call
+// C.free on it after the C API has consumed it via z_transport_move (C takes ownership of the
+// inner transport data, but not the shell — the caller must free the shell).
+func buildCTransport(t Transport) *C.z_owned_transport_t {
+	owned := (*C.z_owned_transport_t)(C.malloc(C.size_t(unsafe.Sizeof(C.z_owned_transport_t{}))))
 	var cOpts C.zc_internal_create_transport_options_t
 	C.zc_internal_create_transport_options_default(&cOpts)
 	cOpts.zid = t.zId.id
 	*(*uint32)(unsafe.Pointer(&cOpts.whatami)) = uint32(t.whatAmI)
 	cOpts.is_qos = C.bool(t.isQos)
 	cOpts.is_multicast = C.bool(t.isMulticast)
-	var owned C.z_owned_transport_t
-	C.zc_internal_create_transport(&owned, &cOpts)
+	C.zc_internal_create_transport(owned, &cOpts)
 	return owned
 }
 
@@ -361,9 +291,10 @@ func (session Session) Links(options *InfoLinksOptions) ([]Link, error) {
 	} else {
 		var cOpts C.z_info_links_options_t
 		C.z_info_links_options_default(&cOpts)
-		owned := buildCTransport(options.Transport.Unwrap())
-		cOpts.transport = C.z_transport_move(&owned)
-		// C takes ownership via move — do NOT drop owned afterwards.
+		ownedPtr := buildCTransport(options.Transport.Unwrap())
+		defer C.free(unsafe.Pointer(ownedPtr))
+		cOpts.transport = C.z_transport_move(ownedPtr)
+		// C takes ownership of inner transport data via move — do NOT drop ownedPtr's contents.
 		res = int8(C.z_info_links(C.z_session_loan(session.session), C.z_closure_link_move(&cClosure), &cOpts))
 	}
 	if res != 0 {
@@ -391,9 +322,10 @@ func (session *Session) DeclareLinkEventsListener(handler Handler[LinkEvent], op
 		C.z_link_events_listener_options_default(&cOpts)
 		cOpts.history = C.bool(options.History)
 		if options.Transport.IsSome() {
-			owned := buildCTransport(options.Transport.Unwrap())
-			cOpts.transport = C.z_transport_move(&owned)
-			// C takes ownership via move — do NOT drop owned afterwards.
+			ownedPtr := buildCTransport(options.Transport.Unwrap())
+			defer C.free(unsafe.Pointer(ownedPtr))
+			cOpts.transport = C.z_transport_move(ownedPtr)
+			// C takes ownership of inner transport data via move — do NOT drop ownedPtr's contents.
 		}
 		res = int8(C.z_declare_link_events_listener(C.z_session_loan(session.session), &cListener, C.z_closure_link_event_move(&cClosure), &cOpts))
 	}
@@ -421,9 +353,10 @@ func (session *Session) DeclareBackgroundLinkEventsListener(closure Closure[Link
 		C.z_link_events_listener_options_default(&cOpts)
 		cOpts.history = C.bool(options.History)
 		if options.Transport.IsSome() {
-			owned := buildCTransport(options.Transport.Unwrap())
-			cOpts.transport = C.z_transport_move(&owned)
-			// C takes ownership via move — do NOT drop owned afterwards.
+			ownedPtr := buildCTransport(options.Transport.Unwrap())
+			defer C.free(unsafe.Pointer(ownedPtr))
+			cOpts.transport = C.z_transport_move(ownedPtr)
+			// C takes ownership of inner transport data via move — do NOT drop ownedPtr's contents.
 		}
 		res = int8(C.z_declare_background_link_events_listener(C.z_session_loan(session.session), C.z_closure_link_event_move(&cClosure), &cOpts))
 	}

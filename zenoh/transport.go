@@ -78,12 +78,8 @@ func extractTransportSnapshot(loanedTransport *C.z_loaned_transport_t) Transport
 // This is a pure Go snapshot: all fields are extracted from the C object at event time,
 // so there are no C resources to manage.
 type TransportEvent struct {
-	kind        SampleKind
-	zId         Id
-	whatAmI     WhatAmI
-	isQos       bool
-	isMulticast bool
-	isShm       bool
+	kind      SampleKind
+	transport Transport
 }
 
 // Return the kind of the event. [SampleKindPut] means transport connected, [SampleKindDelete] means disconnected.
@@ -91,29 +87,9 @@ func (e *TransportEvent) Kind() SampleKind {
 	return e.kind
 }
 
-// Return the Zenoh ID of the remote peer.
-func (e *TransportEvent) ZId() Id {
-	return e.zId
-}
-
-// Return what kind of Zenoh entity is at the other end of the transport.
-func (e *TransportEvent) WhatAmI() WhatAmI {
-	return e.whatAmI
-}
-
-// Return whether Quality of Service is enabled for this transport.
-func (e *TransportEvent) IsQos() bool {
-	return e.isQos
-}
-
-// Return whether this transport is multicast.
-func (e *TransportEvent) IsMulticast() bool {
-	return e.isMulticast
-}
-
-// Return whether shared memory is enabled for this transport.
-func (e *TransportEvent) IsShm() bool {
-	return e.isShm
+// Return the transport associated with this event.
+func (e *TransportEvent) Transport() Transport {
+	return e.transport
 }
 
 //export zenohTransportEventsCallback
@@ -121,12 +97,8 @@ func zenohTransportEventsCallback(event *C.z_loaned_transport_event_t, context u
 	kind := SampleKind(C.z_transport_event_kind(event))
 	loanedTransport := C.z_transport_event_transport(event)
 	evt := TransportEvent{
-		kind:        kind,
-		zId:         Id{id: C.z_transport_zid(loanedTransport)},
-		whatAmI:     WhatAmI(C.z_transport_whatami(loanedTransport)),
-		isQos:       bool(C.z_transport_is_qos(loanedTransport)),
-		isMulticast: bool(C.z_transport_is_multicast(loanedTransport)),
-		isShm:       bool(C.zc_cgo_transport_is_shm(loanedTransport)),
+		kind:      kind,
+		transport: extractTransportSnapshot(loanedTransport),
 	}
 	(*internal.ClosureContext[TransportEvent])(context).Call(evt)
 }

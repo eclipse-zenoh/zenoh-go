@@ -75,7 +75,7 @@ func main() {
 				if evt.Kind() == zenoh.SampleKindDelete {
 					action = "Closed"
 				}
-				fmt.Printf("[Transport Event] %s: zid=%s\n", action, evt.ZId())
+				fmt.Printf("[Transport Event] %s: zid=%s\n", action, evt.Transport().ZId())
 			},
 		},
 		nil,
@@ -89,7 +89,7 @@ func main() {
 					action = "Removed"
 				}
 				fmt.Printf("[Link Event] %s: zid=%s, src=%s, dst=%s\n",
-					action, evt.ZId(), evt.Src(), evt.Dst())
+					action, evt.Link().ZId(), evt.Link().Src(), evt.Link().Dst())
 			},
 		},
 		nil,
