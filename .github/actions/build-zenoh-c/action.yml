@@ -1,27 +1,33 @@
 name: build-zenoh-c
 
+description: Build Zenoh-C and install it in the specified prefix
+
 inputs:
   install-prefix:
-    description: 'Cmake install prefix'
+    description: "Cmake install prefix"
     required: true
-    
+
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
-    - name: Clone Zenoh-C repository
-      id: clone-zenoh-c
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Init Zenoh-C submodule
+      id: init-zenoh-c
       shell: bash
       run: |
-          git clone --depth 1 https://github.com/eclipse-zenoh/zenoh-c.git
-          cd zenoh-c
-          echo "rev=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        git submodule update --init --recursive
+        cd zenoh-c
+        echo "rev=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
     - name: Cache Zenoh-C dependencies
       id: cache-zenoh-c
       uses: actions/cache@v4
       with:
         path: ${{ inputs.install-prefix }}
-        key: ${{ runner.os }}-${{ runner.arch }}-${{steps.clone-zenoh-c.outputs.rev}}-zenoh-c
+        key: ${{ runner.os }}-${{ runner.arch }}-${{steps.init-zenoh-c.outputs.rev}}-zenoh-c
+
     - name: Build Zenoh-C
       if: steps.cache-zenoh-c.outputs.cache-hit != 'true'
       shell: bash
