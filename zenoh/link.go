@@ -26,6 +26,14 @@ import (
 
 // Warning: This API has been marked as unstable: it works as advertised, but it may be changed in a future release.
 //
+// A priority range supported by a link (when QoS is enabled).
+type PriorityRange struct {
+	Min uint8
+	Max uint8
+}
+
+// Warning: This API has been marked as unstable: it works as advertised, but it may be changed in a future release.
+//
 // A Zenoh link. Represents a physical network link within a transport.
 // This is a pure Go snapshot: all fields are extracted from the C object at callback/query time,
 // so there are no C resources to manage.
@@ -38,11 +46,8 @@ type Link struct {
 	isStreamed     bool
 	interfaces     []string
 	authIdentifier string
-	priorityMin    uint8
-	priorityMax    uint8
-	hasPriorities  bool
-	reliability    Reliability
-	hasReliability bool
+	priorities     option.Option[PriorityRange]
+	reliability    option.Option[Reliability]
 }
 
 // Return the Zenoh ID of the transport this link belongs to.
@@ -86,15 +91,15 @@ func (l Link) AuthIdentifier() string {
 }
 
 // Return the priority range supported by the link if QoS is enabled.
-// Returns (min, max, true) if priorities are supported, (0, 0, false) otherwise.
-func (l Link) Priorities() (min uint8, max uint8, ok bool) {
-	return l.priorityMin, l.priorityMax, l.hasPriorities
+// Returns Some(PriorityRange) if priorities are supported, None otherwise.
+func (l Link) Priorities() option.Option[PriorityRange] {
+	return l.priorities
 }
 
 // Return the reliability of the link if QoS is enabled.
-// Returns (reliability, true) if available, (0, false) otherwise.
-func (l Link) Reliability() (Reliability, bool) {
-	return l.reliability, l.hasReliability
+// Returns Some(Reliability) if available, None otherwise.
+func (l Link) Reliability() option.Option[Reliability] {
+	return l.reliability
 }
 
 // extractLink extracts all fields from a loaned C link into a pure Go Link.
@@ -148,17 +153,14 @@ func extractLink(loanedLink *C.z_loaned_link_t) Link {
 
 	// Extract priorities.
 	var cMin, cMax C.uint8_t
-	l.hasPriorities = bool(C.z_link_priorities(loanedLink, &cMin, &cMax))
-	if l.hasPriorities {
-		l.priorityMin = uint8(cMin)
-		l.priorityMax = uint8(cMax)
+	if bool(C.z_link_priorities(loanedLink, &cMin, &cMax)) {
+		l.priorities = option.Some(PriorityRange{Min: uint8(cMin), Max: uint8(cMax)})
 	}
 
 	// Extract reliability.
 	var cReliability uint32
-	l.hasReliability = bool(C.z_link_reliability(loanedLink, (*uint32)(unsafe.Pointer(&cReliability))))
-	if l.hasReliability {
-		l.reliability = Reliability(cReliability)
+	if bool(C.z_link_reliability(loanedLink, (*uint32)(unsafe.Pointer(&cReliability)))) {
+		l.reliability = option.Some(Reliability(cReliability))
 	}
 
 	return l

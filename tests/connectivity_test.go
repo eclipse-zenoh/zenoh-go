@@ -371,8 +371,8 @@ func TestLinkAccessors(t *testing.T) {
 	assert.Empty(t, links[0].AuthIdentifier())
 
 	// Just verify these accessors don't panic
-	_, _, _ = links[0].Priorities()
-	_, _ = links[0].Reliability()
+	_ = links[0].Priorities()
+	_ = links[0].Reliability()
 
 	// Verify ZId matches s2
 	assert.Equal(t, s2.ZId().String(), links[0].ZId().String())
