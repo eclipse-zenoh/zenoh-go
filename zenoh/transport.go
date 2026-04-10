@@ -65,13 +65,8 @@ func (t Transport) IsShm() bool {
 // No C heap allocation — the local z_owned_transport_t escapes to the heap via Go's escape analysis.
 func (t Transport) toCPtr() *C.z_owned_transport_t {
 	var owned C.z_owned_transport_t
-	var cOpts C.zc_internal_create_transport_options_t
-	C.zc_internal_create_transport_options_default(&cOpts)
-	cOpts.zid = t.zId.id
-	cOpts.whatami = C.z_whatami_t(t.whatAmI)
-	cOpts.is_qos = C.bool(t.isQos)
-	cOpts.is_multicast = C.bool(t.isMulticast)
-	C.zc_internal_create_transport(&owned, &cOpts)
+	C.zc_cgo_create_transport(&owned, t.zId.id, C.z_whatami_t(t.whatAmI),
+		C.bool(t.isQos), C.bool(t.isMulticast), C.bool(t.isShm))
 	return &owned
 }
 

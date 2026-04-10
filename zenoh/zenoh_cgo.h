@@ -152,6 +152,12 @@ extern void zenohLinkDrop(void *context);
 // Wrapper that returns false when Z_FEATURE_SHARED_MEMORY is not compiled in.
 bool zc_cgo_transport_is_shm(const z_loaned_transport_t *transport);
 
+// Wrapper that dispatches to zc_internal_create_transport_shm when shared memory is compiled in,
+// falling back to zc_internal_create_transport otherwise.
+void zc_cgo_create_transport(z_owned_transport_t *this_, z_id_t zid,
+                              z_whatami_t whatami, bool is_qos,
+                              bool is_multicast, bool is_shm);
+
 typedef struct zc_cgo_put_options_t {
   zc_internal_encoding_data_t encoding_data;
   zc_cgo_bytes_data_t attachment_data;
