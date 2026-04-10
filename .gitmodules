@@ -1,5 +1,4 @@
 [submodule "zenoh-c"]
 	path = zenoh-c
-	# To switch back to official: url = https://github.com/eclipse-zenoh/zenoh-c.git
-	url = https://github.com/milyin-zenoh-zbobr/zenoh-c.git
-	branch = zbobr_fix-60-transport-from-fields
+	url = https://github.com/eclipse-zenoh/zenoh-c.git
+	branch = main
