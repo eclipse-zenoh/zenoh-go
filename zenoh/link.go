@@ -18,6 +18,7 @@ package zenoh
 // #include "zenoh_cgo.h"
 import "C"
 import (
+	"runtime"
 	"unsafe"
 
 	"github.com/BooleanCat/option"
@@ -41,11 +42,11 @@ type Link struct {
 	zId            Id
 	src            string
 	dst            string
-	group          string
+	group          option.Option[string]
 	mtu            uint16
 	isStreamed     bool
 	interfaces     []string
-	authIdentifier string
+	authIdentifier option.Option[string]
 	priorities     option.Option[PriorityRange]
 	reliability    option.Option[Reliability]
 }
@@ -65,8 +66,8 @@ func (l Link) Dst() string {
 	return l.dst
 }
 
-// Return the group locator of the link (for multicast links). Empty string if not applicable.
-func (l Link) Group() string {
+// Return the group locator of the link (for multicast links). None if not applicable.
+func (l Link) Group() option.Option[string] {
 	return l.group
 }
 
@@ -85,8 +86,8 @@ func (l Link) Interfaces() []string {
 	return l.interfaces
 }
 
-// Return the authentication identifier of the link. Empty string if not available.
-func (l Link) AuthIdentifier() string {
+// Return the authentication identifier of the link. None if not available.
+func (l Link) AuthIdentifier() option.Option[string] {
 	return l.authIdentifier
 }
 
@@ -127,7 +128,7 @@ func extractLink(loanedLink *C.z_loaned_link_t) Link {
 	C.z_link_group(loanedLink, &s)
 	if bool(C.z_internal_string_check(&s)) {
 		loanedStr = C.z_string_loan(&s)
-		l.group = C.GoStringN(C.z_string_data(loanedStr), C.int(C.z_string_len(loanedStr)))
+		l.group = option.Some(C.GoStringN(C.z_string_data(loanedStr), C.int(C.z_string_len(loanedStr))))
 	}
 	C.zc_cgo_string_drop(&s)
 
@@ -135,7 +136,7 @@ func extractLink(loanedLink *C.z_loaned_link_t) Link {
 	C.z_link_auth_identifier(loanedLink, &s)
 	if bool(C.z_internal_string_check(&s)) {
 		loanedStr = C.z_string_loan(&s)
-		l.authIdentifier = C.GoStringN(C.z_string_data(loanedStr), C.int(C.z_string_len(loanedStr)))
+		l.authIdentifier = option.Some(C.GoStringN(C.z_string_data(loanedStr), C.int(C.z_string_len(loanedStr))))
 	}
 	C.zc_cgo_string_drop(&s)
 
@@ -261,22 +262,6 @@ type InfoLinksOptions struct {
 	Transport option.Option[Transport] // Optional transport filter. If set, only return links of this transport.
 }
 
-// buildCTransport creates a C-heap-allocated owned transport from a Go Transport value using
-// zc_internal_create_transport. The returned pointer is C-heap memory; the caller must call
-// C.free on it after the C API has consumed it via z_transport_move (C takes ownership of the
-// inner transport data, but not the shell — the caller must free the shell).
-func buildCTransport(t Transport) *C.z_owned_transport_t {
-	owned := (*C.z_owned_transport_t)(C.malloc(C.size_t(unsafe.Sizeof(C.z_owned_transport_t{}))))
-	var cOpts C.zc_internal_create_transport_options_t
-	C.zc_internal_create_transport_options_default(&cOpts)
-	cOpts.zid = t.zId.id
-	*(*uint32)(unsafe.Pointer(&cOpts.whatami)) = uint32(t.whatAmI)
-	cOpts.is_qos = C.bool(t.isQos)
-	cOpts.is_multicast = C.bool(t.isMulticast)
-	C.zc_internal_create_transport(owned, &cOpts)
-	return owned
-}
-
 // Warning: This API has been marked as unstable: it works as advertised, but it may be changed in a future release.
 //
 // Fetch all links currently associated with the session.
@@ -293,10 +278,11 @@ func (session Session) Links(options *InfoLinksOptions) ([]Link, error) {
 	} else {
 		var cOpts C.z_info_links_options_t
 		C.z_info_links_options_default(&cOpts)
-		ownedPtr := buildCTransport(options.Transport.Unwrap())
-		defer C.free(unsafe.Pointer(ownedPtr))
+		pinner := runtime.Pinner{}
+		defer pinner.Unpin()
+		ownedPtr := options.Transport.Unwrap().toCPtr()
+		pinner.Pin(ownedPtr)
 		cOpts.transport = C.z_transport_move(ownedPtr)
-		// C takes ownership of inner transport data via move — do NOT drop ownedPtr's contents.
 		res = int8(C.z_info_links(C.z_session_loan(session.session), C.z_closure_link_move(&cClosure), &cOpts))
 	}
 	if res != 0 {
@@ -324,10 +310,11 @@ func (session *Session) DeclareLinkEventsListener(handler Handler[LinkEvent], op
 		C.z_link_events_listener_options_default(&cOpts)
 		cOpts.history = C.bool(options.History)
 		if options.Transport.IsSome() {
-			ownedPtr := buildCTransport(options.Transport.Unwrap())
-			defer C.free(unsafe.Pointer(ownedPtr))
+			pinner := runtime.Pinner{}
+			defer pinner.Unpin()
+			ownedPtr := options.Transport.Unwrap().toCPtr()
+			pinner.Pin(ownedPtr)
 			cOpts.transport = C.z_transport_move(ownedPtr)
-			// C takes ownership of inner transport data via move — do NOT drop ownedPtr's contents.
 		}
 		res = int8(C.z_declare_link_events_listener(C.z_session_loan(session.session), &cListener, C.z_closure_link_event_move(&cClosure), &cOpts))
 	}
@@ -355,10 +342,11 @@ func (session *Session) DeclareBackgroundLinkEventsListener(closure Closure[Link
 		C.z_link_events_listener_options_default(&cOpts)
 		cOpts.history = C.bool(options.History)
 		if options.Transport.IsSome() {
-			ownedPtr := buildCTransport(options.Transport.Unwrap())
-			defer C.free(unsafe.Pointer(ownedPtr))
+			pinner := runtime.Pinner{}
+			defer pinner.Unpin()
+			ownedPtr := options.Transport.Unwrap().toCPtr()
+			pinner.Pin(ownedPtr)
 			cOpts.transport = C.z_transport_move(ownedPtr)
-			// C takes ownership of inner transport data via move — do NOT drop ownedPtr's contents.
 		}
 		res = int8(C.z_declare_background_link_events_listener(C.z_session_loan(session.session), C.z_closure_link_event_move(&cClosure), &cOpts))
 	}

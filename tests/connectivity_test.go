@@ -367,8 +367,8 @@ func TestLinkAccessors(t *testing.T) {
 	assert.GreaterOrEqual(t, len(interfaces), 0)
 
 	// Verify unicast link has no group or auth identifier
-	assert.Empty(t, links[0].Group())
-	assert.Empty(t, links[0].AuthIdentifier())
+	assert.True(t, links[0].Group().IsNone())
+	assert.True(t, links[0].AuthIdentifier().IsNone())
 
 	// Just verify these accessors don't panic
 	_ = links[0].Priorities()
@@ -410,7 +410,7 @@ func TestLinkEventSnapshotFields(t *testing.T) {
 	assert.True(t, evt.Link().IsStreamed()) // TCP is streamed
 	assert.Equal(t, evt.Link().Interfaces(), links[0].Interfaces())
 	assert.Equal(t, evt.Link().Group(), links[0].Group())
-	assert.Empty(t, evt.Link().Group()) // Unicast link has no group
+	assert.True(t, evt.Link().Group().IsNone()) // Unicast link has no group
 	assert.Equal(t, zenoh.SampleKindPut, evt.Kind())
 
 	s2.Drop()

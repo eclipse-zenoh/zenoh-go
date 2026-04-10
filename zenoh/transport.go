@@ -61,6 +61,20 @@ func (t Transport) IsShm() bool {
 	return t.isShm
 }
 
+// toCPtr creates a C-owned transport from the Go Transport snapshot.
+// No C heap allocation — the local z_owned_transport_t escapes to the heap via Go's escape analysis.
+func (t Transport) toCPtr() *C.z_owned_transport_t {
+	var owned C.z_owned_transport_t
+	var cOpts C.zc_internal_create_transport_options_t
+	C.zc_internal_create_transport_options_default(&cOpts)
+	cOpts.zid = t.zId.id
+	cOpts.whatami = C.z_whatami_t(t.whatAmI)
+	cOpts.is_qos = C.bool(t.isQos)
+	cOpts.is_multicast = C.bool(t.isMulticast)
+	C.zc_internal_create_transport(&owned, &cOpts)
+	return &owned
+}
+
 // extractTransportSnapshot extracts all fields from a loaned C transport into a pure Go Transport.
 func extractTransportSnapshot(loanedTransport *C.z_loaned_transport_t) Transport {
 	return Transport{
