@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2025 ZettaScale Technology
+// Copyright (c) 2026 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -135,6 +135,28 @@ typedef const struct z_matching_status_t zc_cgo_const_matching_status;
 extern void zenohMatchingListenerCallback(zc_cgo_const_matching_status *status,
                                           void *context);
 extern void zenohMissListenerDrop(void *context);
+
+extern void zenohTransportEventsCallback(z_loaned_transport_event_t *event,
+                                         void *context);
+extern void zenohTransportEventsDrop(void *context);
+extern void zenohLinkEventsCallback(z_loaned_link_event_t *event,
+                                    void *context);
+extern void zenohLinkEventsDrop(void *context);
+
+extern void zenohTransportCallback(z_loaned_transport_t *transport,
+                                   void *context);
+extern void zenohTransportDrop(void *context);
+extern void zenohLinkCallback(z_loaned_link_t *link, void *context);
+extern void zenohLinkDrop(void *context);
+
+// Wrapper that returns false when Z_FEATURE_SHARED_MEMORY is not compiled in.
+bool zc_cgo_transport_is_shm(const z_loaned_transport_t *transport);
+
+// Wrapper that dispatches to zc_internal_create_transport_shm when shared memory is compiled in,
+// falling back to zc_internal_create_transport otherwise.
+void zc_cgo_create_transport(z_owned_transport_t *this_, z_id_t zid,
+                              z_whatami_t whatami, bool is_qos,
+                              bool is_multicast, bool is_shm);
 
 typedef struct zc_cgo_put_options_t {
   zc_internal_encoding_data_t encoding_data;

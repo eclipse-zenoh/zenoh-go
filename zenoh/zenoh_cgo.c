@@ -111,6 +111,27 @@ void zc_cgo_bytes_read_all(const z_loaned_bytes_t *bytes, uint8_t *out) {
   z_bytes_reader_read(&reader, out, z_bytes_len(bytes));
 }
 
+bool zc_cgo_transport_is_shm(const z_loaned_transport_t *transport) {
+#if defined(Z_FEATURE_UNSTABLE_API) && defined(Z_FEATURE_SHARED_MEMORY)
+  return z_transport_is_shm(transport);
+#else
+  (void)transport;
+  return false;
+#endif
+}
+
+void zc_cgo_create_transport(z_owned_transport_t *this_, z_id_t zid,
+                              z_whatami_t whatami, bool is_qos,
+                              bool is_multicast, bool is_shm) {
+#if defined(Z_FEATURE_UNSTABLE_API) && defined(Z_FEATURE_SHARED_MEMORY)
+  zc_internal_create_transport_shm(this_, zid, whatami, is_qos, is_multicast,
+                                   is_shm);
+#else
+  (void)is_shm;
+  zc_internal_create_transport(this_, zid, whatami, is_qos, is_multicast);
+#endif
+}
+
 void zc_cgo_string_drop(z_owned_string_t *s) { z_drop(z_move(*s)); }
 
 void zc_cgo_encoding_drop(z_owned_encoding_t *e) { z_drop(z_move(*e)); }
