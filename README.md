@@ -28,22 +28,39 @@ Before building and running the examples, you need to have the following depende
 
 ### Installing Zenoh-C
 
-You can follow the instructions provided in the [Zenoh-C repository](https://github.com/eclipse-zenoh/zenoh-c) to install zenoh-c.
-It is required that zenoh-c is built with unstable features support (i.e. with -DZENOHC_BUILD_WITH_UNSTABLE_API=ON cmake flag).
+Zenoh-C is included as a git submodule. It must be built and installed **before** building the Go examples, with unstable API support enabled (`-DZENOHC_BUILD_WITH_UNSTABLE_API=ON`).
+
+You can also follow the upstream instructions in the [Zenoh-C repository](https://github.com/eclipse-zenoh/zenoh-c).
 
 ## Building the Examples
 
 This project includes several examples located in the `examples` directory. Each example is in a subdirectory prefixed with `z_`. You can build all the examples using the provided `Makefile`.
 
+The Go bindings use CGo and need the installed Zenoh-C headers and libraries on the include/link path. Run the commands below in order from the repository root.
+
 ### Build All Examples
 
-To build all examples, simply run:
-
 ```bash
+# 1. Initialize and update the zenoh-c submodule
+git submodule init
+git submodule update
+
+# 2. Configure and build zenoh-c; install into ./build/ (gitignored)
+mkdir -p build && cd build
+cmake ../zenoh-c \
+  -DZENOHC_BUILD_WITH_UNSTABLE_API=ON \
+  -DCMAKE_INSTALL_PREFIX="$PWD"
+cmake --build . --target install --config Release
+cd ..
+
+# 3. Point CGo at the installed zenoh-c, then build all examples
+export CGO_CFLAGS="-I$(pwd)/build/include"
+export CGO_LDFLAGS="-L$(pwd)/build/lib"
+export LD_LIBRARY_PATH="$(pwd)/build/lib"
 make all
 ```
 
-This command will compile all the examples and place the binaries in the `bin` directory.
+Zenoh-C is installed under `build/` (`build/include`, `build/lib`).
 
 ### Build a Specific Example
 
@@ -78,6 +95,7 @@ go run examples/z_pub/z_pub.go
 
 - `examples/`: This directory contains all the example subdirectories. Each example has its own subdirectory prefixed with `z_`.
 - `bin/`: This directory will contain the compiled binaries for the examples.
+- `build/`: Local install prefix for zenoh-c (headers and libraries) after building the submodule.
 
 ## Makefile
 
