@@ -27,5 +27,12 @@ go.work.sum
 # binary files
 bin/**
 
+# submodule
+zenoh-c/**
+
+# build artifacts of zenoh-c
+build/
+
+
 # vscode files
 .vscode
